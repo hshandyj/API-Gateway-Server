@@ -10,6 +10,6 @@ echo "部署Kubernetes..."
 sed -i "s|heshihao0720/hpcp-p-api-gateway-server:.*|heshihao0720/hpcp-p-api-gateway-server:$VERSION|g" create_test_k8s.yaml
 
 # 应用Kubernetes配置
-kubectl apply -f create_test_k8s.yaml
+minikube kubectl apply -f create_test_k8s.yaml
 
 echo "部署完成！版本: $VERSION"
