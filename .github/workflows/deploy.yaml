@@ -1,0 +1,41 @@
+name: Deploy Test
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set version
+        id: version
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            VERSION="latest"
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Using version: $VERSION"
+      - name: Add SSH Key
+        run: |
+          echo "${{ secrets.SSH_PEM_KEY }}" > deploy_key.pem
+          chmod 600 deploy_key.pem
+      - name: run deployment with ssh
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_ADDRESS }}
+          username: ${{ secrets.SERVER_USER  }}
+          key: deploy_key.pem
+          script: |
+            docker login -u ${{vars.DOCKER_USERNAME}} -p ${{ secrets.DOCKER_PASSWORD }}
+            docker build -t heshihao0720/HPCP-P/API-Gateway-Server:${{ steps.version.outputs.VERSION }} .
+            docker push heshihao0720/HPCP-P/API-Gateway-Server:${{ steps.version.outputs.VERSION }}
+            chmod +x auto_deploy.sh
+            VERSION=${{ steps.version.outputs.VERSION }} sh auto_deploy.sh
+      - name: Clean up
+        run: rm deploy_key.pem
