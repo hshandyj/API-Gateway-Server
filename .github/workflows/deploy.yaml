@@ -18,8 +18,8 @@ jobs:
       - name: Docker build
         run: |
           docker login -u ${{vars.DOCKER_USERNAME}} -p ${{ secrets.DOCKER_PASSWORD }}
-          docker build -t heshihao0720/hpcp-p/api-gateway-server:${{ steps.version.outputs.VERSION }} .
-          docker push heshihao0720/hpcp-p/api-gateway-server:${{ steps.version.outputs.VERSION }}
+          docker build -t heshihao0720/hpcp-p-api-gateway-server:${{ steps.version.outputs.VERSION }} .
+          docker push heshihao0720/hpcp-p-api-gateway-server:${{ steps.version.outputs.VERSION }}
       - name: Transfer deployment files
         run: |
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > deploy_key.pem

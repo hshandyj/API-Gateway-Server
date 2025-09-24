@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
       - name: api-gateway
-        image: heshihao0720/hpcp-p/api-gateway-server:latest
+        image: heshihao0720/hpcp-p-api-gateway-server:latest
         ports:
         - containerPort: 8080
         resources:
