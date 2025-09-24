@@ -1,8 +1,6 @@
 name: Deploy Test
 on:
   push:
-    branches:
-      - main
     tags:
       - 'v*'
 jobs:
@@ -14,11 +12,7 @@ jobs:
       - name: Set version
         id: version
         run: |
-          if [[ $GITHUB_REF == refs/tags/* ]]; then
-            VERSION=${GITHUB_REF#refs/tags/}
-          else
-            VERSION="latest"
-          fi
+          VERSION=${GITHUB_REF#refs/tags/}
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "Using version: $VERSION"
       - name: Add SSH Key
@@ -28,8 +22,8 @@ jobs:
       - name: run deployment with ssh
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.SERVER_ADDRESS }}
-          username: ${{ secrets.SERVER_USER  }}
+          host: ${{ vars.SERVER_ADDRESS }}
+          username: ${{ vars.SERVER_USER  }}
           key: deploy_key.pem
           script: |
             docker login -u ${{vars.DOCKER_USERNAME}} -p ${{ secrets.DOCKER_PASSWORD }}
