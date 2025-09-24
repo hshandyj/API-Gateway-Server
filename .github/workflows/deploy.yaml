@@ -15,12 +15,19 @@ jobs:
           VERSION=${GITHUB_REF#refs/tags/}
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "Using version: $VERSION"
+      - name: Docker build
+        run: |
+          docker login -u ${{vars.DOCKER_USERNAME}} -p ${{ secrets.DOCKER_PASSWORD }}
+          docker build -t heshihao0720/hpcp-p/api-gateway-server:${{ steps.version.outputs.VERSION }} .
+          docker push heshihao0720/hpcp-p/api-gateway-server:${{ steps.version.outputs.VERSION }}
       - name: Transfer deployment files
         run: |
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > deploy_key.pem
           chmod 600 deploy_key.pem
           ssh -i deploy_key.pem -o StrictHostKeyChecking=no ${{ vars.SERVER_USER }}@${{ vars.SERVER_ADDRESS }} "mkdir -p ~/deploy/${{ github.event.repository.name }}"
           scp -i deploy_key.pem -o StrictHostKeyChecking=no -r deploy/* ${{ vars.SERVER_USER }}@${{ vars.SERVER_ADDRESS }}:~/deploy/${{ github.event.repository.name }}/
+      - name: Clean up ssh key
+        run: rm deploy_key.pem
       - name: run deployment with ssh
         uses: appleboy/ssh-action@master
         with:
@@ -30,10 +37,5 @@ jobs:
           script: |
             mkdir -p ~/deploy/${{ github.event.repository.name }}
             cd ~/deploy/${{ github.event.repository.name }}
-            docker login -u ${{vars.DOCKER_USERNAME}} -p ${{ secrets.DOCKER_PASSWORD }}
-            docker build -t heshihao0720/hpcp-p/api-gateway-server:${{ steps.version.outputs.VERSION }} .
-            docker push heshihao0720/hpcp-p/api-gateway-server:${{ steps.version.outputs.VERSION }}
             chmod +x auto_deploy.sh
             VERSION=${{ steps.version.outputs.VERSION }} ./auto_deploy.sh
-      - name: Clean up
-        run: rm deploy_key.pem
