@@ -17,7 +17,7 @@ jobs:
           echo "Using version: $VERSION"
       - name: Add SSH Key
         run: |
-          echo "${{ secrets.SSH_PEM_KEY }}" > deploy_key.pem
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > deploy_key.pem
           chmod 600 deploy_key.pem
       - name: run deployment with ssh
         uses: appleboy/ssh-action@master
