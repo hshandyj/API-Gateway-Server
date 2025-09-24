@@ -19,6 +19,7 @@ jobs:
         run: |
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > deploy_key.pem
           chmod 600 deploy_key.pem
+          ssh -i deploy_key.pem -o StrictHostKeyChecking=no ${{ vars.SERVER_USER }}@${{ vars.SERVER_ADDRESS }} "mkdir -p ~/deploy/${{ github.event.repository.name }}"
           scp -i deploy_key.pem -o StrictHostKeyChecking=no -r deploy/* ${{ vars.SERVER_USER }}@${{ vars.SERVER_ADDRESS }}:~/deploy/${{ github.event.repository.name }}/
       - name: run deployment with ssh
         uses: appleboy/ssh-action@master
