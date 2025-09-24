@@ -26,7 +26,7 @@ jobs:
         with:
           host: ${{ vars.SERVER_ADDRESS }}
           username: ${{ vars.SERVER_USER  }}
-          key: deploy_key.pem
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             mkdir -p ~/deploy/${{ github.event.repository.name }}
             cd ~/deploy/${{ github.event.repository.name }}
