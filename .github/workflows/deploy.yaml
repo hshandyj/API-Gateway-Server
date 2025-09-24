@@ -15,21 +15,15 @@ jobs:
           VERSION=${GITHUB_REF#refs/tags/}
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "Using version: $VERSION"
-      - name: Add SSH Key
-        run: |
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > deploy_key.pem
-          chmod 600 deploy_key.pem
       - name: run deployment with ssh
         uses: appleboy/ssh-action@master
         with:
           host: ${{ vars.SERVER_ADDRESS }}
           username: ${{ vars.SERVER_USER  }}
-          key: deploy_key.pem
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             docker login -u ${{vars.DOCKER_USERNAME}} -p ${{ secrets.DOCKER_PASSWORD }}
             docker build -t heshihao0720/HPCP-P/API-Gateway-Server:${{ steps.version.outputs.VERSION }} .
             docker push heshihao0720/HPCP-P/API-Gateway-Server:${{ steps.version.outputs.VERSION }}
             chmod +x auto_deploy.sh
             VERSION=${{ steps.version.outputs.VERSION }} sh auto_deploy.sh
-      - name: Clean up
-        run: rm deploy_key.pem
