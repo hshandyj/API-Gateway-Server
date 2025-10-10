@@ -19,8 +19,9 @@ RUN apk --no-cache add ca-certificates tzdata
 
 WORKDIR /root/
 
-# 从构建阶段复制二进制文件
+# 从构建阶段复制二进制文件和配置
 COPY --from=builder /app/api-gateway .
+COPY --from=builder /app/internal/config/APIGatewayConfig.yaml ./internal/config/
 
 EXPOSE 8080
 
