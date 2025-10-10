@@ -23,6 +23,9 @@ spec:
         env: demo
         owner: heshihao
     spec:
+      # 使用私有镜像需要配置imagePullSecrets
+      imagePullSecrets:
+      - name: dockerhub-secret
       containers:
       - name: api-gateway
         image: heshihao0720/hpcp-p-api-gateway-server:latest
@@ -37,16 +40,20 @@ spec:
             cpu: "500m"
         livenessProbe:
           httpGet:
-            path: /
+            path: /health
             port: 8080
           initialDelaySeconds: 30
           periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
         readinessProbe:
           httpGet:
-            path: /
+            path: /ready
             port: 8080
           initialDelaySeconds: 5
           periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
 
 ---
 apiVersion: v1

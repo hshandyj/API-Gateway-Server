@@ -34,8 +34,13 @@ jobs:
           host: ${{ vars.SERVER_ADDRESS }}
           username: ${{ vars.SERVER_USER  }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: VERSION,DOCKER_USERNAME,DOCKER_PASSWORD,DOCKER_EMAIL
           script: |
+            export VERSION=${{ steps.version.outputs.VERSION }}
+            export DOCKER_USERNAME=${{ vars.DOCKER_USERNAME }}
+            export DOCKER_PASSWORD=${{ secrets.DOCKER_PASSWORD }}
+            export DOCKER_EMAIL=${{ vars.DOCKER_EMAIL }}
             mkdir -p ~/deploy/${{ github.event.repository.name }}
             cd ~/deploy/${{ github.event.repository.name }}
             chmod +x auto_deploy.sh
-            VERSION=${{ steps.version.outputs.VERSION }} ./auto_deploy.sh
+            ./auto_deploy.sh

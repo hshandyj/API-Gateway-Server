@@ -12,6 +12,12 @@ func LoggingMiddleware() gin.HandlerFunc {
 	logger.SetFormatter(&logrus.JSONFormatter{})
 
 	return gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
+		// 过滤健康检查路径，不记录日志
+		if isHealthCheckPath(param.Path) {
+			return ""
+		}
+
+		// 只记录真实的业务请求日志
 		logger.WithFields(logrus.Fields{
 			"status_code": param.StatusCode,
 			"latency":     param.Latency,
@@ -25,6 +31,25 @@ func LoggingMiddleware() gin.HandlerFunc {
 
 		return ""
 	})
+}
+
+// isHealthCheckPath 判断是否为健康检查路径
+func isHealthCheckPath(path string) bool {
+	healthCheckPaths := []string{
+		"/health",
+		"/ready",
+		"/healthz",
+		"/readyz",
+		"/livez",
+	}
+
+	for _, healthPath := range healthCheckPaths {
+		if path == healthPath {
+			return true
+		}
+	}
+
+	return false
 }
 
 func RequestIDMiddleware() gin.HandlerFunc {
