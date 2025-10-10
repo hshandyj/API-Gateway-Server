@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package auth;
+
+option go_package = "HPCP-P/API-Gateway-Server/proto/auth";
+
+// 认证服务定义
+service AuthService {
+    // 验证用户token
+    rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+    
+    // 获取用户信息
+    rpc GetUserInfo(GetUserInfoRequest) returns (GetUserInfoResponse);
+    
+    // 检查用户权限
+    rpc CheckPermission(CheckPermissionRequest) returns (CheckPermissionResponse);
+}
+
+// 验证token请求
+message ValidateTokenRequest {
+    string token = 1;
+}
+
+// 验证token响应
+message ValidateTokenResponse {
+    bool valid = 1;
+    string user_id = 2;
+    string username = 3;
+    string error_message = 4;
+}
+
+// 获取用户信息请求
+message GetUserInfoRequest {
+    string user_id = 1;
+}
+
+// 获取用户信息响应
+message GetUserInfoResponse {
+    string user_id = 1;
+    string username = 2;
+    string email = 3;
+    repeated string roles = 4;
+    string error_message = 5;
+}
+
+// 检查权限请求
+message CheckPermissionRequest {
+    string user_id = 1;
+    string resource = 2;
+    string action = 3;
+}
+
+// 检查权限响应
+message CheckPermissionResponse {
+    bool allowed = 1;
+    string error_message = 2;
+}

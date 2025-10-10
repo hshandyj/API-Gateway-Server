@@ -1,0 +1,49 @@
+# 开发工具和配置文件
+Makefile
+*.md
+README.md
+.env
+.env.local
+.env.development
+.env.test
+config.env.example
+
+# 构建产物
+bin/
+dist/
+build/
+
+# 开发依赖
+.git/
+.gitignore
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 测试文件
+*_test.go
+test/
+tests/
+
+# 文档
+docs/
+*.md
+
+# 日志文件
+*.log
+logs/
+
+# 临时文件
+tmp/
+temp/
+.tmp/
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# 开发脚本
+scripts/
+deploy/
