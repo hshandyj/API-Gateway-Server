@@ -104,9 +104,7 @@ go mod download
 mkdir -p proto/auth
 
 # 生成protobuf文件
-protoc --go_out=. --go_opt=paths=source_relative \
-    --go-grpc_out=. --go-grpc_opt=paths=source_relative \
-    proto/auth.proto
+protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/auth/auth.proto
 ```
 
 ### 配置环境变量

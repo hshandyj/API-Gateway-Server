@@ -8,12 +8,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 
-	"HPCP-P/API-Gateway-Server/internal/config"
-	"HPCP-P/API-Gateway-Server/internal/grpc"
-	"HPCP-P/API-Gateway-Server/internal/handlers"
-	"HPCP-P/API-Gateway-Server/internal/kafka"
-	"HPCP-P/API-Gateway-Server/internal/middleware"
-	"HPCP-P/API-Gateway-Server/internal/websocket"
+	"APIGatewayServer/internal/config"
+	"APIGatewayServer/internal/grpc"
+	"APIGatewayServer/internal/handlers"
+	"APIGatewayServer/internal/kafka"
+	"APIGatewayServer/internal/middleware"
+	"APIGatewayServer/internal/websocket"
 )
 
 func main() {

@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 
-	"HPCP-P/API-Gateway-Server/internal/grpc"
+	"APIGatewayServer/internal/grpc"
 )
 
 type HealthHandler struct {

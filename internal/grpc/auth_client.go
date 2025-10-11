@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
 
-	pb "HPCP-P/API-Gateway-Server/proto/auth"
+	pb "APIGatewayServer/proto/auth"
 )
 
 type AuthClient struct {

@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 
-	"HPCP-P/API-Gateway-Server/internal/kafka"
+	"APIGatewayServer/internal/kafka"
 )
 
 type AnalyticsMiddleware struct {

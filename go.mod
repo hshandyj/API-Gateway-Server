@@ -1,4 +1,4 @@
-module HPCP-P/API-Gateway-Server
+module APIGatewayServer
 
 go 1.23
 
