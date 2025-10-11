@@ -1,0 +1,18 @@
+ServerConfig:
+  Port: "8080"
+
+GRPCConfig:
+  AuthServiceAddr: "iam-auth-service:50051"
+
+KafkaConfig:
+  Brokers:
+    - ""
+  Topics:
+    UserAnalytics: "user_behavior_analytics"
+  Auth:
+    Username: ""
+    Password: ""
+
+ServicesConfig:
+  DocumentServiceAddr: "ws://document-service:8081/ws"
+ 
