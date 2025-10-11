@@ -9,7 +9,7 @@ RUN go mod download
 
 # 复制源码并构建
 COPY . .
-RUN go build -o api-gateway main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o bin/api-gateway .
 
 # 运行阶段
 FROM alpine:latest
