@@ -29,6 +29,17 @@ spec:
       containers:
       - name: api-gateway
         image: heshihao0720/hpcp-p-api-gateway-server:latest
+        env:
+        - name: KAFKA_BROKERS
+          value: "${KAFKA_BROKERS}"
+        - name: KAFKA_USERNANME
+          value: "${KAFKA_USERNANME}"
+        - name: KAFKA_PASSWORD
+          value: "${KAFKA_PASSWORD}"
+        - name: GO_ENV
+          value: "production"
+        - name: GIN_MODE
+          value: "release"
         ports:
         - containerPort: 8080
         resources:
