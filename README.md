@@ -111,58 +111,18 @@ protoc --go_out=. --go_opt=paths=source_relative \
 
 ### 配置环境变量
 ```bash
-cp config.env.example .env
+cp .env.example .env
 # 编辑.env文件设置你的配置
 ```
 
 ### 开发模式运行
 ```bash
 # 设置Gin为调试模式并运行
-GO_ENV=debug
-GIN_MODE=debug
+$env:GO_ENV="development"
+$env:GIN_MODE="debug"
 go run main.go
 ```
 
-### 生产模式构建和运行
-```bash
-# 构建项目
-go build -o bin/api-gateway main.go
-
-# 运行项目
-./bin/api-gateway
-```
-
-### 完整开发流程
-```bash
-# 1. 首次设置
-go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-
-# 2. 安装依赖
-go mod tidy
-go mod download
-
-# 3. 生成protobuf文件
-mkdir -p proto/auth
-protoc --go_out=. --go_opt=paths=source_relative \
-    --go-grpc_out=. --go-grpc_opt=paths=source_relative \
-    proto/auth.proto
-
-# 4. 配置环境变量
-cp config.env.example .env
-# 编辑.env文件
-
-# 5. 开发模式运行
-GIN_MODE=debug go run main.go
-```
-
-### 清理构建文件
-```bash
-# 删除构建文件
-rm -rf bin/
-rm -rf proto/auth/*.pb.go
-```
 
 ## API接口
 
@@ -197,30 +157,13 @@ GET /api/v1/ws/document      # WebSocket文档协作连接
 GET /api/v1/users/me         # 获取当前用户信息
 ```
 
-## 环境变量配置
+## 环境变量
 
-| 变量名 | 描述 | 默认值 |
-|--------|------|--------|
-| SERVER_PORT | 服务器端口 | 8080 |
-| AUTH_SERVICE_ADDR | 认证服务地址 | localhost:50051 |
-| KAFKA_BROKERS | Kafka代理地址 | localhost:9092 |
-| KAFKA_TOPIC_ANALYTICS | 用户分析主题 | user-analytics |
-| DOCUMENT_SERVICE_ADDR | 文档服务WebSocket地址 | ws://localhost:8081/ws |
+- `GO_ENV` - 运行环境 (development/production)
+- `KAFKA_USERNANME` - kafka用户名（覆盖配置文件）
+- `KAFKA_PASSWORD` - kafka密码（覆盖配置文件）
+- `GIN_MODE` - Gin模式 (debug/release)
 
-## Docker部署
-
-### 构建镜像
-```bash
-docker build -t hpcp-api-gateway:latest .
-```
-
-### 运行容器
-```bash
-docker run -p 8080:8080 \
-  -e AUTH_SERVICE_ADDR=your-auth-service:50051 \
-  -e KAFKA_BROKERS=your-kafka:9092 \
-  hpcp-api-gateway:latest
-```
 
 ## 开发指南
 
@@ -246,46 +189,5 @@ go test -v ./...
 1. 在`internal/middleware/`下创建新文件
 2. 实现`gin.HandlerFunc`接口
 3. 在路由中使用中间件
-
-## 监控和日志
-
-### 日志格式
-项目使用结构化JSON日志格式，包含：
-- 请求ID
-- 用户ID
-- 响应时间
-- 状态码
-- 错误信息
-
-### 监控指标
-- HTTP请求响应时间
-- gRPC调用成功率
-- Kafka消息发送状态
-- WebSocket连接数量
-
-## 故障排查
-
-### 常见问题
-1. **gRPC连接失败**: 检查认证服务是否启动
-2. **Kafka发送失败**: 检查Kafka集群连接
-3. **WebSocket代理失败**: 检查文档服务地址配置
-
-### 日志查看
-```bash
-# 实时查看日志
-docker logs -f <container-id>
-
-# 过滤错误日志
-docker logs <container-id> 2>&1 | grep ERROR
-```
-
-## 性能优化建议
-
-1. **连接池管理**: gRPC和HTTP客户端使用连接池
-2. **缓存策略**: 对频繁访问的数据进行缓存
-3. **异步处理**: 使用Kafka处理非关键路径的操作
-4. **监控告警**: 设置关键指标的监控和告警
-
-## 许可证
 
 MIT License

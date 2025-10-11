@@ -42,8 +42,8 @@ func (hh *HealthHandler) ReadinessCheck(c *gin.Context) {
 	checks := make(map[string]interface{})
 	allHealthy := true
 
-	// 检查认证服务连接
-	if _, err := hh.authClient.ValidateToken(ctx, "health-check-token"); err != nil {
+	// 检查认证服务连接状态（不会产生无效的 token 验证请求）
+	if err := hh.authClient.CheckHealth(ctx); err != nil {
 		checks["auth_service"] = map[string]interface{}{
 			"status": "unhealthy",
 			"error":  err.Error(),

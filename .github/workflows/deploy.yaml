@@ -34,12 +34,12 @@ jobs:
           host: ${{ vars.SERVER_ADDRESS }}
           username: ${{ vars.SERVER_USER  }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: VERSION,DOCKER_USERNAME,DOCKER_PASSWORD,DOCKER_EMAIL
+          envs: VERSION,KAFKA_BROKERS,KAFKA_USERNANME,KAFKA_PASSWORD
           script: |
             export VERSION=${{ steps.version.outputs.VERSION }}
-            export DOCKER_USERNAME=${{ vars.DOCKER_USERNAME }}
-            export DOCKER_PASSWORD=${{ secrets.DOCKER_PASSWORD }}
-            export DOCKER_EMAIL=${{ vars.DOCKER_EMAIL }}
+            export KAFKA_BROKERS=${{ vars.KAFKA_BROKERS }}
+            export KAFKA_USERNANME=${{ vars.KAFKA_USERNANME }}
+            export KAFKA_PASSWORD=${{ secrets.KAFKA_PASSWORD }}
             mkdir -p ~/deploy/${{ github.event.repository.name }}
             cd ~/deploy/${{ github.event.repository.name }}
             chmod +x auto_deploy.sh

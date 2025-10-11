@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
+	"github.com/joho/godotenv"
 	"gopkg.in/yaml.v3"
 )
 
@@ -43,6 +45,9 @@ type ServicesConfig struct {
 }
 
 func Load() *Config {
+	// 加载.env文件（如果存在）
+	loadEnvFile()
+
 	// 默认配置
 	defaultConfig := &Config{
 		Server: ServerConfig{
@@ -64,24 +69,48 @@ func Load() *Config {
 
 	// 尝试加载YAML配置
 	yamlPath := findYAMLConfig()
-	if yamlPath == "" {
-		return defaultConfig
+	if yamlPath != "" {
+		// 读取并解析YAML文件
+		data, err := os.ReadFile(yamlPath)
+		if err != nil {
+			fmt.Printf("Warning: Failed to read YAML config: %v\n", err)
+		} else {
+			// 解析YAML到配置结构
+			if err := yaml.Unmarshal(data, defaultConfig); err != nil {
+				fmt.Printf("Warning: Failed to parse YAML config: %v\n", err)
+			}
+		}
 	}
 
-	// 读取并解析YAML文件
-	data, err := os.ReadFile(yamlPath)
-	if err != nil {
-		fmt.Printf("Warning: Failed to read YAML config: %v\n", err)
-		return defaultConfig
+	if kafkaUsername := os.Getenv("KAFKA_USERNANME"); kafkaUsername != "" {
+		defaultConfig.Kafka.Auth.Username = kafkaUsername
 	}
 
-	// 解析YAML到配置结构
-	if err := yaml.Unmarshal(data, defaultConfig); err != nil {
-		fmt.Printf("Warning: Failed to parse YAML config: %v\n", err)
-		return defaultConfig
+	if kafkaPassword := os.Getenv("KAFKA_PASSWORD"); kafkaPassword != "" {
+		defaultConfig.Kafka.Auth.Password = kafkaPassword
+	}
+
+	if kafkaBrokers := os.Getenv("KAFKA_BROKERS"); kafkaBrokers != "" {
+		defaultConfig.Kafka.Brokers = strings.Split(kafkaBrokers, ",")
 	}
 
 	return defaultConfig
+}
+
+// 加载.env文件
+func loadEnvFile() {
+	dir, err := os.Getwd()
+	if err != nil {
+		return
+	}
+
+	// 尝试加载.env文件
+	envPath := filepath.Join(dir, ".env")
+	if _, err := os.Stat(envPath); err == nil {
+		if err := godotenv.Load(envPath); err != nil {
+			fmt.Printf("Warning: Failed to load .env file: %v\n", err)
+		}
+	}
 }
 
 // 查找YAML配置文件
@@ -96,10 +125,7 @@ func findYAMLConfig() string {
 	// 优先级：GO_ENV > GIN_MODE > 默认
 	env := os.Getenv("GO_ENV")
 	if env == "" {
-		env = os.Getenv("GIN_MODE")
-	}
-	if env == "" {
-		env = "production" // 默认使用生产配置
+		env = "production"
 	}
 
 	// 配置文件命名规则：

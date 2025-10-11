@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
 
 	pb "HPCP-P/API-Gateway-Server/proto/auth"
@@ -66,4 +67,30 @@ func (ac *AuthClient) CheckPermission(ctx context.Context, userID, resource, act
 	}
 
 	return ac.client.CheckPermission(ctx, req)
+}
+
+// CheckHealth 检查认证服务的健康状态
+// 通过检查 gRPC 连接状态来判断服务是否可用，不会产生无效的 token 验证请求
+func (ac *AuthClient) CheckHealth(ctx context.Context) error {
+	// 检查连接状态
+	state := ac.conn.GetState()
+
+	// READY 和 IDLE 状态都表示连接正常
+	if state == connectivity.Ready || state == connectivity.Idle {
+		return nil
+	}
+
+	// 如果连接处于其他状态，尝试等待连接变为 READY
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+
+	// 等待连接状态变化
+	if ac.conn.WaitForStateChange(ctx, state) {
+		newState := ac.conn.GetState()
+		if newState == connectivity.Ready || newState == connectivity.Idle {
+			return nil
+		}
+	}
+
+	return grpc.ErrClientConnClosing
 }

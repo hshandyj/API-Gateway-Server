@@ -6,12 +6,12 @@ GRPCConfig:
 
 KafkaConfig:
   Brokers:
-    - "pkc-921jm.us-east-2.aws.confluent.cloud:9092"  # 替换为你的Bootstrap server
+    - ""
   Topics:
     UserAnalytics: "user_behavior_analytics"
   Auth:
-    Username: "QUUVPHNO4WOEVVZL"      # 替换为你的API Key
-    Password: "cfltKnv5q3uJ7w8qIPOPD4CU4GtEbPTHzgPCtSn7RFGDszgZ6ApNiTafwameKu0g"   # 替换为你的API Secret
+    Username: ""
+    Password: ""
 
 ServicesConfig:
   DocumentServiceAddr: "ws://localhost:8081/ws"
