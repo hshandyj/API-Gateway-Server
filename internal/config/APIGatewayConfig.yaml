@@ -2,7 +2,7 @@ ServerConfig:
   Port: "8080"
 
 GRPCConfig:
-  AuthServiceAddr: "iam-auth-service.hpcp.svc.cluster.local:50051"
+  AuthServiceAddr: "iam-auth-service:50051"
 
 KafkaConfig:
   Brokers:
