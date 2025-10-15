@@ -15,4 +15,9 @@ KafkaConfig:
 
 ServicesConfig:
   DocumentServiceAddr: "ws://document-service:8081/ws"
- 
+
+
+WebClientConfig:
+  AllowedOrigins:
+    - "http://localhost:3000"
+    - "http://375566.xyz"

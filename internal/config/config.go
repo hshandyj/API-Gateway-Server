@@ -11,10 +11,11 @@ import (
 )
 
 type Config struct {
-	Server   ServerConfig   `yaml:"ServerConfig"`
-	GRPC     GRPCConfig     `yaml:"GRPCConfig"`
-	Kafka    KafkaConfig    `yaml:"KafkaConfig"`
-	Services ServicesConfig `yaml:"ServicesConfig"`
+	Server          ServerConfig    `yaml:"ServerConfig"`
+	GRPC            GRPCConfig      `yaml:"GRPCConfig"`
+	Kafka           KafkaConfig     `yaml:"KafkaConfig"`
+	Services        ServicesConfig  `yaml:"ServicesConfig"`
+	WebClientConfig WebClientConfig `yaml:"WebClientConfig"`
 }
 
 type ServerConfig struct {
@@ -44,28 +45,16 @@ type ServicesConfig struct {
 	DocumentServiceAddr string `yaml:"DocumentServiceAddr"`
 }
 
+type WebClientConfig struct {
+	AllowedOrigins []string `yaml:"AllowedOrigins"`
+}
+
 func Load() *Config {
 	// 加载.env文件（如果存在）
 	loadEnvFile()
 
 	// 默认配置
-	defaultConfig := &Config{
-		Server: ServerConfig{
-			Port: "8080",
-		},
-		GRPC: GRPCConfig{
-			AuthServiceAddr: "localhost:50051",
-		},
-		Kafka: KafkaConfig{
-			Brokers: []string{"localhost:9092"},
-			Topics: KafkaTopics{
-				UserAnalytics: "user-analytics",
-			},
-		},
-		Services: ServicesConfig{
-			DocumentServiceAddr: "ws://localhost:8081/ws",
-		},
-	}
+	defaultConfig := &Config{}
 
 	// 尝试加载YAML配置
 	yamlPath := findYAMLConfig()

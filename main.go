@@ -42,7 +42,7 @@ func main() {
 	defer kafkaProducer.Close()
 
 	// 初始化WebSocket代理
-	wsProxy := websocket.NewProxyHandler(cfg.Services.DocumentServiceAddr)
+	wsProxy := websocket.NewProxyHandler(cfg.Services.DocumentServiceAddr, cfg.WebClientConfig.AllowedOrigins)
 
 	// 初始化处理器
 	healthHandler := handlers.NewHealthHandler(authClient)

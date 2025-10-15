@@ -3,6 +3,7 @@ package websocket
 import (
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -15,7 +16,7 @@ type ProxyHandler struct {
 	documentServiceURL string
 }
 
-func NewProxyHandler(documentServiceURL string) *ProxyHandler {
+func NewProxyHandler(documentServiceURL string, allowedOrigins []string) *ProxyHandler {
 	logger := logrus.New()
 	logger.SetLevel(logrus.InfoLevel)
 
@@ -24,7 +25,20 @@ func NewProxyHandler(documentServiceURL string) *ProxyHandler {
 		upgrader: websocket.Upgrader{
 			CheckOrigin: func(r *http.Request) bool {
 				// 在生产环境中应该实现更严格的origin检查
-				return true
+				origin := r.Header.Get("Origin")
+
+				for _, allowed := range allowedOrigins {
+					if origin == allowed {
+						return true
+					}
+				}
+
+				if strings.HasPrefix(origin, "http://localhost") {
+					return true
+				}
+
+				logger.Warn("拒绝非法 Origin:", origin)
+				return false
 			},
 		},
 		documentServiceURL: documentServiceURL,
