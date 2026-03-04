@@ -117,7 +117,6 @@ cp .env.example .env
 ```bash
 # 设置Gin为调试模式并运行
 $env:GO_ENV="development"
-$env:GIN_MODE="debug"
 go run main.go
 ```
 
@@ -160,7 +159,6 @@ GET /api/v1/users/me         # 获取当前用户信息
 - `GO_ENV` - 运行环境 (development/production)
 - `KAFKA_USERNANME` - kafka用户名（覆盖配置文件）
 - `KAFKA_PASSWORD` - kafka密码（覆盖配置文件）
-- `GIN_MODE` - Gin模式 (debug/release)
 
 
 ## 开发指南

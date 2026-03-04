@@ -2,6 +2,7 @@ package kafka
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/IBM/sarama"
@@ -13,18 +14,22 @@ type Producer struct {
 	logger   *logrus.Logger
 }
 
+// UserAnalyticsEvent 与接口文档 Kafka 事件规范保持一致
+// Topic: user-analytics
 type UserAnalyticsEvent struct {
-	UserID    string                 `json:"user_id"`
-	Action    string                 `json:"action"`
-	Resource  string                 `json:"resource"`
-	Timestamp time.Time              `json:"timestamp"`
-	Metadata  map[string]interface{} `json:"metadata"`
-	IP        string                 `json:"ip"`
-	UserAgent string                 `json:"user_agent"`
+	EventType     string                 `json:"event_type"` // user.login / document.create / document.view / document.edit / document.delete
+	UserID        string                 `json:"user_id"`
+	Username      string                 `json:"username"`
+	DocumentID    string                 `json:"document_id,omitempty"`    // 非文档类事件时为空
+	DocumentTitle string                 `json:"document_title,omitempty"` // 可选，网关层通常无法获取
+	Metadata      map[string]interface{} `json:"metadata"`
+	Timestamp     string                 `json:"timestamp"` // ISO 8601
 }
 
 func NewProducer(brokers []string, username, password string) (*Producer, error) {
+	fmt.Printf("======== Kafka Auth Debug: Username='%s', Password='%s' ========\n", username, password)
 	config := sarama.NewConfig()
+	config.Version = sarama.V3_0_0_0
 	config.Producer.RequiredAcks = sarama.WaitForAll
 	config.Producer.Retry.Max = 5
 	config.Producer.Return.Successes = true
@@ -80,10 +85,10 @@ func (p *Producer) handleSuccesses() {
 		// 从 metadata 中提取用户信息（需要在发送时设置）
 		if meta, ok := msg.Metadata.(*UserAnalyticsEvent); ok {
 			p.logger.WithFields(logrus.Fields{
-				"partition": msg.Partition,
-				"offset":    msg.Offset,
-				"user_id":   meta.UserID,
-				"action":    meta.Action,
+				"partition":  msg.Partition,
+				"offset":     msg.Offset,
+				"user_id":    meta.UserID,
+				"event_type": meta.EventType,
 			}).Debug("Message sent successfully")
 		}
 	}
@@ -98,10 +103,10 @@ func (p *Producer) handleErrors() {
 		// 从 metadata 中提取用户信息
 		if meta, ok := err.Msg.Metadata.(*UserAnalyticsEvent); ok {
 			p.logger.WithFields(logrus.Fields{
-				"error":   err.Err,
-				"user_id": meta.UserID,
-				"action":  meta.Action,
-				"topic":   err.Msg.Topic,
+				"error":      err.Err,
+				"user_id":    meta.UserID,
+				"event_type": meta.EventType,
+				"topic":      err.Msg.Topic,
 			}).Error("Failed to send message to Kafka")
 
 			// ========== 关键决策点 ==========
@@ -126,12 +131,12 @@ func (p *Producer) SendUserAnalyticsEvent(topic string, event *UserAnalyticsEven
 		Value: sarama.ByteEncoder(eventBytes),
 		Headers: []sarama.RecordHeader{
 			{
-				Key:   []byte("action"),
-				Value: []byte(event.Action),
+				Key:   []byte("event_type"),
+				Value: []byte(event.EventType),
 			},
 			{
 				Key:   []byte("timestamp"),
-				Value: []byte(event.Timestamp.Format(time.RFC3339)),
+				Value: []byte(event.Timestamp),
 			},
 		},
 		// 设置 Metadata，以便在异步回调中识别消息
@@ -144,9 +149,9 @@ func (p *Producer) SendUserAnalyticsEvent(topic string, event *UserAnalyticsEven
 
 	// 记录消息已提交到发送队列
 	p.logger.WithFields(logrus.Fields{
-		"user_id": event.UserID,
-		"action":  event.Action,
-		"topic":   topic,
+		"user_id":    event.UserID,
+		"event_type": event.EventType,
+		"topic":      topic,
 	}).Debug("Analytics event queued for sending")
 
 	return nil

@@ -6,13 +6,34 @@ GRPCConfig:
 
 KafkaConfig:
   Brokers:
-    - ""
+    - "localhost:9092"
   Topics:
-    UserAnalytics: "user_behavior_analytics"
+    UserAnalytics: "user-analytics"
   Auth:
     Username: ""
     Password: ""
 
 ServicesConfig:
-  DocumentServiceAddr: "ws://localhost:8081/ws"
- 
+  DocumentServiceAddr: "http://localhost:8081"
+  DocumentServiceWSAddr: "ws://localhost:8081/ws/document"
+  AuthServiceHTTPAddr: "http://localhost:8090"
+  UserinfoServiceAddr: "http://localhost:8000"
+
+WebClientConfig:
+  AllowedOrigins:
+    - "http://localhost:3000"
+    - "http://375566.xyz"
+
+# 限流配置
+RateLimitConfig:
+  GlobalQPS: 1000       # 全局每秒最大请求数
+  PerIPQPS: 100         # 单 IP 每秒最大请求数
+  PerUserQPS: 50        # 单用户每秒最大请求数
+  BurstSize: 20         # 令牌桶突发容量
+
+# 熔断器配置
+CircuitBreakerConfig:
+  FailureThreshold: 5       # 连续失败 5 次后熔断
+  SuccessThreshold: 3       # Half-Open 下连续成功 3 次恢复
+  RecoveryTimeoutSec: 30    # 熔断 30 秒后进入 Half-Open
+  HalfOpenMaxRequests: 3    # Half-Open 下最多放行 3 个请求

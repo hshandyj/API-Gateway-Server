@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -41,15 +42,41 @@ func main() {
 	}
 	defer kafkaProducer.Close()
 
-	// 初始化WebSocket代理
-	wsProxy := websocket.NewProxyHandler(cfg.Services.DocumentServiceAddr, cfg.WebClientConfig.AllowedOrigins)
+	// 初始化WebSocket代理（使用 ws:// 地址）
+	wsProxy := websocket.NewProxyHandler(cfg.Services.DocumentServiceWSAddr, cfg.WebClientConfig.AllowedOrigins)
 
 	// 初始化处理器
 	healthHandler := handlers.NewHealthHandler(authClient)
-
+	documentHandler := handlers.NewDocumentHandler(cfg.Services.DocumentServiceAddr)
+	userinfoHandler := handlers.NewUserinfoHandler(cfg.Services.UserinfoServiceAddr)
+	authHandler := handlers.NewAuthHandler(cfg.Services.AuthServiceHTTPAddr)
 	// 初始化中间件
 	authMiddleware := middleware.NewAuthMiddleware(authClient)
 	analyticsMiddleware := middleware.NewAnalyticsMiddleware(kafkaProducer, cfg.Kafka.Topics.UserAnalytics)
+
+	// 初始化限流中间件（从配置文件加载参数）
+	rateLimitCfg := middleware.RateLimitConfig{
+		GlobalQPS:  cfg.RateLimit.GlobalQPS,
+		PerIPQPS:   cfg.RateLimit.PerIPQPS,
+		PerUserQPS: cfg.RateLimit.PerUserQPS,
+		BurstSize:  cfg.RateLimit.BurstSize,
+	}
+
+	// 初始化熔断器管理器（为每个下游服务创建独立实例，实现故障隔离）
+	cbCfg := middleware.CircuitBreakerConfig{
+		FailureThreshold:    cfg.CircuitBreaker.FailureThreshold,
+		SuccessThreshold:    cfg.CircuitBreaker.SuccessThreshold,
+		RecoveryTimeout:     time.Duration(cfg.CircuitBreaker.RecoveryTimeoutSec) * time.Second,
+		HalfOpenMaxRequests: cfg.CircuitBreaker.HalfOpenMaxRequests,
+	}
+	cbManager := middleware.NewCircuitBreakerManager(
+		[]string{"iam-auth-service", "document-service", "data-analysis-service"},
+		cbCfg,
+	)
+	logger.WithFields(logrus.Fields{
+		"rate_limit":      rateLimitCfg,
+		"circuit_breaker": cbCfg,
+	}).Info("Rate limiting and circuit breaker initialized")
 
 	// 设置Gin模式
 	if os.Getenv("GIN_MODE") == "" {
@@ -62,6 +89,8 @@ func main() {
 	// 全局中间件
 	r.Use(middleware.RequestIDMiddleware())
 	r.Use(middleware.LoggingMiddleware())
+	r.Use(middleware.CORSMiddleware(cfg.WebClientConfig.AllowedOrigins)) // 使用配置的允许来源
+	r.Use(middleware.RateLimitMiddleware(rateLimitCfg))                  // 全局 + Per-IP 限流（CORS 之后、Auth 之前）
 	r.Use(gin.Recovery())
 
 	// 健康检查路由（不需要认证）
@@ -71,53 +100,30 @@ func main() {
 	// API版本分组
 	v1 := r.Group("/api/v1")
 	{
+		// 不需要认证的路由组（IAM 认证服务熔断器保护）
+		publicAuth := v1.Group("/auth")
+		publicAuth.Use(middleware.CircuitBreakerMiddleware(cbManager.Get("iam-auth-service")))
+		publicAuth.Use(analyticsMiddleware.TrackLoginEvent()) // 追踪登录事件
+		publicAuth.Any("/*path", authHandler.ProxyRequest)
+
 		// 需要认证的路由组
 		authenticated := v1.Group("/")
 		authenticated.Use(authMiddleware.RequireAuth())
+		authenticated.Use(middleware.UserRateLimitMiddleware(rateLimitCfg)) // Per-User 限流（Auth 之后）
 		authenticated.Use(analyticsMiddleware.TrackUserActivity())
 		{
-			// WebSocket代理路由
+			// WebSocket代理路由（文档服务熔断器保护）
 			authenticated.GET("/ws/document", wsProxy.HandleWebSocket)
 
-			// 文档相关路由
+			// 文档相关路由（文档服务熔断器保护）
 			documents := authenticated.Group("/documents")
-			documents.Use(authMiddleware.RequirePermission("documents", "read"))
-			{
-				documents.GET("/", func(c *gin.Context) {
-					c.JSON(200, gin.H{"message": "获取文档列表"})
-				})
-				documents.GET("/:id", func(c *gin.Context) {
-					c.JSON(200, gin.H{"message": "获取文档详情", "id": c.Param("id")})
-				})
-			}
+			documents.Use(middleware.CircuitBreakerMiddleware(cbManager.Get("document-service")))
+			documents.Any("/*path", documentHandler.ProxyRequest)
 
-			// 需要写权限的文档操作
-			documentsWrite := authenticated.Group("/documents")
-			documentsWrite.Use(authMiddleware.RequirePermission("documents", "write"))
-			{
-				documentsWrite.POST("/", func(c *gin.Context) {
-					c.JSON(200, gin.H{"message": "创建文档"})
-				})
-				documentsWrite.PUT("/:id", func(c *gin.Context) {
-					c.JSON(200, gin.H{"message": "更新文档", "id": c.Param("id")})
-				})
-				documentsWrite.DELETE("/:id", func(c *gin.Context) {
-					c.JSON(200, gin.H{"message": "删除文档", "id": c.Param("id")})
-				})
-			}
-
-			// 用户信息路由
-			users := authenticated.Group("/users")
-			{
-				users.GET("/me", func(c *gin.Context) {
-					userID := c.GetString("user_id")
-					username := c.GetString("username")
-					c.JSON(200, gin.H{
-						"user_id":  userID,
-						"username": username,
-					})
-				})
-			}
+			// 数据分析服务路由（数据分析服务熔断器保护）
+			userinfo := authenticated.Group("/userinfo")
+			userinfo.Use(middleware.CircuitBreakerMiddleware(cbManager.Get("data-analysis-service")))
+			userinfo.Any("/*path", userinfoHandler.ProxyRequest)
 		}
 	}
 

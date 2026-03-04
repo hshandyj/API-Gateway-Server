@@ -2,22 +2,38 @@ ServerConfig:
   Port: "8080"
 
 GRPCConfig:
-  AuthServiceAddr: "iam-auth-service:50051"
+  AuthServiceAddr: "iam-service:50051"
 
 KafkaConfig:
   Brokers:
-    - ""
+    - "kafka:29092"
   Topics:
-    UserAnalytics: "user_behavior_analytics"
+    UserAnalytics: "user-analytics"
   Auth:
     Username: ""
     Password: ""
 
 ServicesConfig:
-  DocumentServiceAddr: "ws://document-service:8081/ws"
-
+  DocumentServiceAddr: "http://file-service:8081"
+  DocumentServiceWSAddr: "ws://file-service:8081/ws/document"
+  AuthServiceHTTPAddr: "http://iam-service:8090"
+  UserinfoServiceAddr: "http://data-analysis-service:8000"
 
 WebClientConfig:
   AllowedOrigins:
     - "http://localhost:3000"
     - "http://375566.xyz"
+
+# 限流配置
+RateLimitConfig:
+  GlobalQPS: 1000       
+  PerIPQPS: 100         
+  PerUserQPS: 50        
+  BurstSize: 20         
+
+# 熔断器配置
+CircuitBreakerConfig:
+  FailureThreshold: 5       
+  SuccessThreshold: 3       
+  RecoveryTimeoutSec: 30    
+  HalfOpenMaxRequests: 3

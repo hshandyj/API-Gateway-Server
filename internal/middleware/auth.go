@@ -27,26 +27,32 @@ func NewAuthMiddleware(authClient *grpc.AuthClient) *AuthMiddleware {
 
 func (am *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 从请求头中获取token
-		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "缺少认证token",
-				"code":  "MISSING_TOKEN",
-			})
-			c.Abort()
-			return
-		}
+		var token string
 
-		// 解析Bearer token
-		token := strings.TrimPrefix(authHeader, "Bearer ")
-		if token == authHeader {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "无效的token格式",
-				"code":  "INVALID_TOKEN_FORMAT",
-			})
-			c.Abort()
-			return
+		// 优先从 Authorization Header 读取（普通 HTTP 请求）
+		authHeader := c.GetHeader("Authorization")
+		if authHeader != "" {
+			// 解析 "Bearer <token>" 格式
+			token = strings.TrimPrefix(authHeader, "Bearer ")
+			if token == authHeader {
+				c.JSON(http.StatusUnauthorized, gin.H{
+					"error": "无效的token格式",
+					"code":  "INVALID_TOKEN_FORMAT",
+				})
+				c.Abort()
+				return
+			}
+		} else {
+			// 兜底：从 query 参数读取（WebSocket 连接无法设置 Header，token 通过 ?token= 传递）
+			token = c.Query("token")
+			if token == "" {
+				c.JSON(http.StatusUnauthorized, gin.H{
+					"error": "缺少认证token",
+					"code":  "MISSING_TOKEN",
+				})
+				c.Abort()
+				return
+			}
 		}
 
 		// 调用认证服务验证token
@@ -73,7 +79,6 @@ func (am *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 		// 将用户信息存储到上下文中
 		c.Set("user_id", resp.UserId)
 		c.Set("username", resp.Username)
-		c.Set("token", token)
 
 		am.logger.WithFields(logrus.Fields{
 			"user_id":  resp.UserId,

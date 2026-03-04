@@ -1,5 +1,5 @@
 # 构建阶段
-FROM golang:1.23-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
 
@@ -25,8 +25,7 @@ COPY --from=builder /app/internal/config/APIGatewayConfig.yaml ./internal/config
 
 EXPOSE 8080
 
-# 设置环境变量
-ENV GIN_MODE=release
+
 ENV GO_ENV=production
 
 CMD ["./api-gateway"]
